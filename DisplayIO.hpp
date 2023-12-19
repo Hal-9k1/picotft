@@ -16,6 +16,9 @@ public:
 
 private:
   void writeByte(uint8_t byte);
-  void setBusIOMode(bool mode);
+  void pullHigh(uint pin);
+  void pullLow(uint pin);
+  void driveHigh(uint pin);
+  void driveLow(uint pin);
 }
 #endif // PICOTFT_DISPLAYIO_HPP
