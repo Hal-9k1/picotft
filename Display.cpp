@@ -1,8 +1,8 @@
-#include "Display.hpp"
+#include "picotft/Display.hpp"
 
 #include <cstdint>
 #include <cstddef>
-#include "DisplayIO.hpp"
+#include "picotft/DisplayIO.hpp"
 
 Display::Display(DisplayIO *pDisplayIO)
   : pDisplayIO(pDisplayIO)

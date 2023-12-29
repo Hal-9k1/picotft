@@ -2,7 +2,7 @@
 #define PICOTFT_DISPLAY_HPP
 #include <cstdint>
 
-#include "DisplayIO.hpp"
+#include "picotft/DisplayIO.hpp"
 
 class Display
 {

@@ -1,25 +1,62 @@
+# mostly for target_link_options, but pico-sdk requires 3.13 anyway so:
+cmake_minimum_required(VERSION 3.13)
 
-cmake_minimum_required(VERSION 3.12)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 17)
+if (NOT DEFINED PICO_SDK)
+  project(picotft LANGUAGES C CXX ASM)
+  message("PICO_SDK not defined, assuming picotft is top level project.")
+  set(CMAKE_C_STANDARD 11)
+  set(CMAKE_C_STANDARD_REQUIRED YES)
+  set(CMAKE_CXX_STANDARD 17)
+  set(CMAKE_CXX_STANDARD_REQUIRED YES)
+  include(pico_sdk_import.cmake)
+  pico_sdk_init()
+endif()
 
+# pico_sdk_init includes pico_sdk_version
 if (PICO_SDK_VERSION_STRING VERSION_LESS "1.3.0")
-    message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.3.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
+  message(FATAL_ERROR "Raspberry Pi Pico SDK version 1.3.0 (or later) required. Your version is ${PICO_SDK_VERSION_STRING}")
 endif()
 
-pico_sdk_init()
-add_compile_options(-Wall
-        -Wno-format          # int != int32_t as far as the compiler is concerned because gcc has int32_t as long int
-        -Wno-unused-function # we have some for the docs that aren't called
-        )
-if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-Wno-maybe-uninitialized)
-endif()
+# not sure if this was specific to pico-examples:
+#if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+#  add_compile_options(-Wno-maybe-uninitialized)
+#endif()
 
-add_library(picotft Display.cpp)
+add_library(picotft
+  Display.cpp DisplayIO.cpp)
+
+target_include_directories(picotft
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include-private
+  )
+
+target_compile_features(picotft PUBLIC
+  cxx_std_17)
+
+set(PICOTFT_UNIVERSAL_WARNINGS  # warn when...
+  -Wsuggest-override              # overriding method isn't marked as such
+  -Wdisabled-optimization         # an optimization is disabled because code is too complex
+  -Wunsafe-loop-optimizations     # loop optimization is disabled because bounds can't be detected
+  -Wcast-qual                     # const/volatile qualifiers are casted away
+  -Wcast-align=strict             # a pointer is cast to type with greater alignment requirement
+  -Waggressive-loop-optimizations # loop optimization is disabled because of undefined behavior
+  -Woverloaded-virtual            # a virtual method is HIDDEN by one with same name, diff args
+  -Wold-style-cast                # a c-style cast is used
+  -Wuseless-cast                  # a redundant cast is used
+  -Wpedantic                      # ansi standards are violated
+  -Wall                           # any of a list of warnings are triggered
+  -Wextra                         # any of a longer list of warnings are triggered
+  -Werror                       # error instead of warn
+  -pedantic-error)              # error instead of warn for ansi violations
+
+target_compile_options(picotft PRIVATE
+  ${PICOTFT_UNIVERSAL_WARNINGS})
+
+target_link_options(picotft PRIVATE
+  ${PICOTFT_UNIVERSAL_WARNINGS})
 
 target_link_libraries(picotft PUBLIC
-        pico_stdlib              # for core functionality
-        pico_cyw43_arch_none     # we need Wifi to access the GPIO, but we don't need anything else
-        )
+  pico_stdlib
+  pico_cyw43_arch_none # gpio is tied to wifi chip on the pico w
+  )

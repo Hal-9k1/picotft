@@ -2,7 +2,7 @@
 #define PICOTFT_DISPLAYIO_HPP
 #include <cstdint>
 #include "pico/types.h"
-#include "PinConfig.hpp"
+#include "picotft/PinConfig.hpp"
 
 class DisplayIO
 {
