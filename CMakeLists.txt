@@ -27,13 +27,16 @@ add_library(picotft
   Display.cpp DisplayIO.cpp)
 
 target_include_directories(picotft
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include-private
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/include-private
   )
 
 target_compile_features(picotft PUBLIC
   cxx_std_17)
 
+add_library(picotft_warnings INTERFACE)
 set(PICOTFT_UNIVERSAL_WARNINGS  # warn when...
   -Wsuggest-override              # overriding method isn't marked as such
   -Wdisabled-optimization         # an optimization is disabled because code is too complex
@@ -49,14 +52,15 @@ set(PICOTFT_UNIVERSAL_WARNINGS  # warn when...
   -Wextra                         # any of a longer list of warnings are triggered
   -Werror                       # error instead of warn
   -pedantic-errors)             # error instead of warn for ansi violations
-
-target_compile_options(picotft PRIVATE
+target_compile_options(picotft_warnings INTERFACE
+  ${PICOTFT_UNIVERSAL_WARNINGS})
+target_link_options(picotft_warnings INTERFACE
   ${PICOTFT_UNIVERSAL_WARNINGS})
 
-target_link_options(picotft PRIVATE
-  ${PICOTFT_UNIVERSAL_WARNINGS})
-
-target_link_libraries(picotft PUBLIC
-  pico_stdlib
-  pico_cyw43_arch_none # gpio is tied to wifi chip on the pico w
+target_link_libraries(picotft 
+  PUBLIC
+    pico_stdlib
+    pico_cyw43_arch_none # gpio is tied to wifi chip on the pico w
+  PRIVATE
+    picotft_warnings
   )
