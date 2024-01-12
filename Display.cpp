@@ -33,22 +33,22 @@ void Display::writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std:
   std::uint16_t endRow, std::uint16_t *pPixelData)
 {
   std::uint8_t colAddrParam[] = {
-    (startCol & 0xFF00) >> 8,
-    startCol & 0x00FF,
-    (endCol & 0xFF00) >> 8,
-    endCol & 0x00FF
+    static_cast<std::uint8_t>((startCol >> 8) & 0xFF),
+    static_cast<std::uint8_t>(startCol & 0xFF),
+    static_cast<std::uint8_t>((endCol >> 8) & 0xFF),
+    static_cast<std::uint8_t>(endCol & 0xFF)
   };
   pDisplayIO->writeCmd(0x2A, 4, colAddrParam);
   std::uint8_t pageAddrParam[] = {
-    (startRow & 0xFF00) >> 8,
-    startRow & 0x00FF,
-    (endCol & 0xFF00) >> 8,
-    endCol & 0x00FF
+    static_cast<std::uint8_t>((startRow >> 8) & 0xFF),
+    static_cast<std::uint8_t>(startRow & 0xFF),
+    static_cast<std::uint8_t>((endCol >> 8) & 0xFF),
+    static_cast<std::uint8_t>(endCol & 0xFF)
   };
   pDisplayIO->writeCmd(0x2B, 4, pageAddrParam);
   std::size_t numPixels = (endCol - startCol) * (endRow - startRow);
   // remember 2 bytes per pixel:
-  std::uint8_t *pPixelBytes = new int[numPixels * 2];
+  std::uint8_t *pPixelBytes = new std::uint8_t[numPixels * 2];
   // this loop SUCKS. if this becomes a bottleneck consider some weird aliasing trick (can you do
   // that with uint8_t instead of char?) or maybe just memcpy the whole array if host and LCD
   // endianness match

@@ -1,15 +1,15 @@
 # mostly for target_link_options, but pico-sdk requires 3.13 anyway so:
 cmake_minimum_required(VERSION 3.13)
 
+if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+  message("Building picotft as top level project.")
+  include(pico_sdk_import.cmake)
 
-if (NOT DEFINED PICO_SDK)
   project(picotft LANGUAGES C CXX ASM)
-  message("PICO_SDK not defined, assuming picotft is top level project.")
   set(CMAKE_C_STANDARD 11)
   set(CMAKE_C_STANDARD_REQUIRED YES)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
-  include(pico_sdk_import.cmake)
   pico_sdk_init()
 endif()
 
@@ -48,7 +48,7 @@ set(PICOTFT_UNIVERSAL_WARNINGS  # warn when...
   -Wall                           # any of a list of warnings are triggered
   -Wextra                         # any of a longer list of warnings are triggered
   -Werror                       # error instead of warn
-  -pedantic-error)              # error instead of warn for ansi violations
+  -pedantic-errors)             # error instead of warn for ansi violations
 
 target_compile_options(picotft PRIVATE
   ${PICOTFT_UNIVERSAL_WARNINGS})

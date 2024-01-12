@@ -17,6 +17,6 @@ public:
 
 private:
   DisplayIO *pDisplayIO;
-}
+};
 
 #endif // PICOTFT_DISPLAY_HPP

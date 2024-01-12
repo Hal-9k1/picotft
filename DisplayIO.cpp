@@ -4,11 +4,14 @@
 #include <stdexcept>
 #include "pico/types.h"
 #include "pico/stdio.h"
+#include "pico/hardware/stdio.h"
+#include "pico/hardware/sync.h"
 
-DisplayIO::DisplayIO(PinConfig pinConfig, uint readBufferLength)
+DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   : buf(new std::uint8_t[readBufferLength]),
     bufLen(readBufferLength),
     bufWriteCursor(0),
+    pinConfig(pinConfig)
 {
   for (uint i = 0; i < 8; ++i)
   {
