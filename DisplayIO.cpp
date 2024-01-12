@@ -1,5 +1,6 @@
 #include "picotft/DisplayIO.hpp"
 
+#include <cassert>
 #include <cstdint>
 #include <stdexcept>
 #include "pico/types.h"
@@ -33,6 +34,9 @@ DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   // parameter "gpio", the gpio that caused the interrupt.)
   gpio_set_irq_enabled_with_callback(pinConfig.readStrobe, GPIO_IRQ_EDGE_RISE, true,
     &handleReadInterrupt);
+  // ew singleton:
+  assert(!pInstance);
+  pInstance = this;
 }
 
 void DisplayIO::writeCmd(std::uint8_t cmdByte, uint dataLen, std::uint8_t *pDataBytes)
@@ -76,31 +80,35 @@ bool DisplayIO::tryReadByte(std::uint8_t &outByte)
 
 void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
 {
-  (void)gpio;
-  (void)events;
-  if (bufFull)
+  if (gpio != pInstance->pinConfig.readStrobe)
   {
-    bufOverflow = true;
+    // this will happen if interrupts on any other gpio pin are enabled because the callback set by
+    // gpio_set_irq_enabled_with_callback is used for all enabled interrupts on the chip
+    return;
+  }
+  if (pInstance->bufFull)
+  {
+    pInstance->bufOverflow = true;
   }
   std::uint8_t byte;
   for (uint i = 0; i < 8; ++i)
   {
-    if (gpio_get(pinConfig.bus[i]))
+    if (gpio_get(pInstance->pinConfig.bus[i]))
     {
       byte |= 1 << i;
     }
   }
-  buf[bufWriteCursor] = byte;
-  bufWriteCursor = (bufWriteCursor + 1) % bufLen;
-  bufFull = bufReadCursor == bufWriteCursor;
-  __sev();
+  pInstance->buf[bufWriteCursor] = byte;
+  pInstance->bufWriteCursor = (pInstance->bufWriteCursor + 1) % pInstance->bufLen;
+  pInstance->bufFull = pInstance->bufReadCursor == pInstance->bufWriteCursor;
+  __sev(); // wake up waitReadByte if it's waiting for us
 }
 void DisplayIO::writeByte(std::uint8_t byte)
 {
   driveLow(pinConfig.writeStrobe);
   for (uint i = 0; i < 8; ++i)
   {
-    if (byte & (1 << i) == 0)
+    if ((byte & (1 << i)) == 0)
     {
       driveLow(pinConfig.bus[i]);
     }

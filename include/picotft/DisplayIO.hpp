@@ -14,6 +14,10 @@ public:
   bool tryReadByte(std::uint8_t &outByte);
 
 private:
+  // I hate singletons but gpio_irq_callback_t doesn't have a userdata parameter and by the looks of
+  // things (https://github.com/raspberrypi/pico-sdk/issues/756) won't for a long time
+  static DisplayIO *pInstance;
+
   PinConfig pinConfig;
   std::uint8_t *buf;
   uint bufLen;
