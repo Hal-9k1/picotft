@@ -1,7 +1,7 @@
 #ifndef PICOTFT_PINCONFIG_HPP
 #define PICOTFT_PINCONFIG_HPP
 
-#include <pico/types.h>
+#include "pico/types.h"
 
 struct PinConfig
 {
