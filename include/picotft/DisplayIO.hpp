@@ -18,13 +18,13 @@ private:
   // things (https://github.com/raspberrypi/pico-sdk/issues/756) won't for a long time
   static DisplayIO *pInstance;
 
-  PinConfig pinConfig;
   std::uint8_t *buf;
   uint bufLen;
   uint bufWriteCursor;
   uint bufReadCursor;
   bool bufFull;
   bool bufOverflow;
+  PinConfig pinConfig;
 
   static void handleReadInterrupt(uint gpio, std::uint32_t events);
 

@@ -12,6 +12,9 @@ DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   : buf(new std::uint8_t[readBufferLength]),
     bufLen(readBufferLength),
     bufWriteCursor(0),
+    bufReadCursor(0),
+    bufFull(false),
+    bufOverflow(false),
     pinConfig(pinConfig)
 {
   for (uint i = 0; i < 8; ++i)
@@ -80,6 +83,7 @@ bool DisplayIO::tryReadByte(std::uint8_t &outByte)
 
 void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
 {
+  (void)events;
   if (gpio != pInstance->pinConfig.readStrobe)
   {
     // this will happen if interrupts on any other gpio pin are enabled because the callback set by
@@ -90,7 +94,7 @@ void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
   {
     pInstance->bufOverflow = true;
   }
-  std::uint8_t byte;
+  std::uint8_t byte = 0;
   for (uint i = 0; i < 8; ++i)
   {
     if (gpio_get(pInstance->pinConfig.bus[i]))
@@ -98,7 +102,7 @@ void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
       byte |= 1 << i;
     }
   }
-  pInstance->buf[bufWriteCursor] = byte;
+  pInstance->buf[pInstance->bufWriteCursor] = byte;
   pInstance->bufWriteCursor = (pInstance->bufWriteCursor + 1) % pInstance->bufLen;
   pInstance->bufFull = pInstance->bufReadCursor == pInstance->bufWriteCursor;
   __sev(); // wake up waitReadByte if it's waiting for us

@@ -49,11 +49,12 @@ set(PICOTFT_UNIVERSAL_WARNINGS  # warn when...
   -Woverloaded-virtual            # a virtual method is HIDDEN by one with same name, diff args
   -Wold-style-cast                # a c-style cast is used
   -Wuseless-cast                  # a redundant cast is used
-  -Wpedantic                      # ansi standards are violated
+  #-Wpedantic                      # ansi standards are violated
   -Wall                           # any of a list of warnings are triggered
   -Wextra                         # any of a longer list of warnings are triggered
-  -Werror                       # error instead of warn
-  -pedantic-errors)             # error instead of warn for ansi violations
+  #-Werror                       # error instead of warn
+  #-pedantic-errors              # error instead of warn for ansi violations
+  )
 target_compile_options(picotft_warnings INTERFACE
   ${PICOTFT_UNIVERSAL_WARNINGS})
 target_link_options(picotft_warnings INTERFACE
@@ -69,3 +70,20 @@ target_link_libraries(picotft PUBLIC
 
 target_link_libraries(picotft PRIVATE
   picotft_warnings)
+
+get_target_property(_picotft_inc_dirs picotft INCLUDE_DIRECTORIES)
+get_target_property(_picotft_if_inc_dirs picotft INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(_picotft_ifsys_inc_dirs picotft INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+message(TRACE "picotft inc dirs ${_picotft_inc_dirs}")
+message(TRACE "picotft if inc dirs ${_picotft_if_inc_dirs}")
+message(TRACE "picotft if sys inc dirs ${_picotft_ifsys_inc_dirs}")
+
+get_target_property(_picosdk_inc_dirs pico_stdlib INCLUDE_DIRECTORIES)
+get_target_property(_picosdk_if_inc_dirs pico_stdlib INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(_picosdk_ifsys_inc_dirs pico_stdlib INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+message(TRACE "picosdk inc dirs ${_picosdk_inc_dirs}")
+message(TRACE "picosdk if inc dirs ${_picosdk_if_inc_dirs}")
+message(TRACE "picosdk if sys inc dirs ${_picosdk_ifsys_inc_dirs}")
+
+get_directory_property(_curdir_inc_dirs INCLUDE_DIRECTORIES)
+message(TRACE "picosdk curdir inc dirs ${_curdir_inc_dirs}")
