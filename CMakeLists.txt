@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.13)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   message("Building picotft as top level project.")
   include(pico_sdk_import.cmake)
+  include(ignore_library_warnings.cmake)
 
   project(picotft LANGUAGES C CXX ASM)
   set(CMAKE_C_STANDARD 11)
@@ -11,6 +12,7 @@ if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED YES)
   pico_sdk_init()
+
 endif()
 
 # pico_sdk_init includes pico_sdk_version
@@ -57,10 +59,13 @@ target_compile_options(picotft_warnings INTERFACE
 target_link_options(picotft_warnings INTERFACE
   ${PICOTFT_UNIVERSAL_WARNINGS})
 
-target_link_libraries(picotft 
-  PUBLIC
-    pico_stdlib
-    pico_cyw43_arch_none # gpio is tied to wifi chip on the pico w
-  PRIVATE
-    picotft_warnings
-  )
+ignore_library_warnings(pico_stdlib)
+target_link_libraries(picotft PUBLIC
+  pico_stdlib)
+
+#ignore_library_warnings(pico_cyw43_arch_none)
+target_link_libraries(picotft PUBLIC
+  pico_cyw43_arch_none) # gpio is tied to wifi chip on the pico w
+
+target_link_libraries(picotft PRIVATE
+  picotft_warnings)

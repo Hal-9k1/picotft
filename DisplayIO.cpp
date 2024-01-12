@@ -5,8 +5,8 @@
 #include <stdexcept>
 #include "pico/types.h"
 #include "pico/stdio.h"
-#include "pico/hardware/stdio.h"
-#include "pico/hardware/sync.h"
+#include "hardware/gpio.h"
+#include "hardware/sync.h"
 
 DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   : buf(new std::uint8_t[readBufferLength]),
