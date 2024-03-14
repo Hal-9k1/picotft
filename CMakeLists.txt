@@ -1,18 +1,21 @@
 # mostly for target_link_options, but pico-sdk requires 3.13 anyway so:
 cmake_minimum_required(VERSION 3.13)
 
-if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+get_directory_property(_picotft_parent_dir PARENT_DIRECTORY)
+if (_picotft_parent_dir)
   message("Building picotft as top level project.")
   include(pico_sdk_import.cmake)
-  include(ignore_library_warnings.cmake)
+  #include(ignore_library_warnings.cmake)
 
-  project(picotft LANGUAGES C CXX ASM)
-  set(CMAKE_C_STANDARD 11)
-  set(CMAKE_C_STANDARD_REQUIRED YES)
-  set(CMAKE_CXX_STANDARD 17)
-  set(CMAKE_CXX_STANDARD_REQUIRED YES)
+  project(picotft)
+  #set(CMAKE_C_STANDARD 11)
+  #set(CMAKE_C_STANDARD_REQUIRED YES)
+  #set(CMAKE_CXX_STANDARD 17)
+  #set(CMAKE_CXX_STANDARD_REQUIRED YES)
   pico_sdk_init()
 
+else()
+  message("Building picotft as subdirectory.")
 endif()
 
 # pico_sdk_init includes pico_sdk_version

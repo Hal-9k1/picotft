@@ -2,11 +2,14 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
 #include <stdexcept>
 #include "pico/types.h"
 #include "pico/stdio.h"
 #include "hardware/gpio.h"
 #include "hardware/sync.h"
+
+DisplayIO *DisplayIO::pInstance;
 
 DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   : buf(new std::uint8_t[readBufferLength]),
@@ -109,6 +112,7 @@ void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
 }
 void DisplayIO::writeByte(std::uint8_t byte)
 {
+  std::printf("Writing byte %02X\n", byte);
   driveLow(pinConfig.writeStrobe);
   for (uint i = 0; i < 8; ++i)
   {
