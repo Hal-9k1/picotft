@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <stdexcept>
+#include "pico/time.h"
 #include "pico/types.h"
 #include "pico/stdio.h"
 #include "hardware/gpio.h"
@@ -125,6 +126,7 @@ void DisplayIO::writeByte(std::uint8_t byte)
       driveHigh(pinConfig.bus[i]);
     }
   }
+  sleep_ms(5);
   pullHigh(pinConfig.writeStrobe);
 }
 void DisplayIO::pullHigh(uint pin)
