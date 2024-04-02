@@ -46,16 +46,24 @@ DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   pInstance = this;
 }
 
-void DisplayIO::writeCmd(std::uint8_t cmdByte, uint dataLen, std::uint8_t *pDataBytes)
+void DisplayIO::writeCmd(std::uint8_t cmdByte, uint dataLen, const std::uint8_t *pDataBytes)
+{
+  writeCmdHeader(cmdByte);
+  for (uint i = 0; i < dataLen; ++i)
+  {
+    writeByte(pDataBytes[i]);
+  }
+  endCmdWrite();
+}
+void DisplayIO::writeCmdHeader(std::uint8_t cmdByte)
 {
   driveLow(pinConfig.chipSel);
   driveLow(pinConfig.cmdSwitch);
   writeByte(cmdByte);
   pullHigh(pinConfig.cmdSwitch);
-  for (uint i = 0; i < dataLen; ++i)
-  {
-    writeByte(pDataBytes[i]);
-  }
+}
+void DisplayIO::endCmdWrite()
+{
   for (uint i = 0; i < 8; ++i)
   {
     driveLow(pinConfig.bus[i]);
@@ -113,7 +121,7 @@ void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
 }
 void DisplayIO::writeByte(std::uint8_t byte)
 {
-  std::printf("Writing byte %02X\n", byte);
+  //std::printf("Writing byte %02X\n", byte);
   driveLow(pinConfig.writeStrobe);
   for (uint i = 0; i < 8; ++i)
   {
@@ -126,7 +134,7 @@ void DisplayIO::writeByte(std::uint8_t byte)
       driveHigh(pinConfig.bus[i]);
     }
   }
-  sleep_ms(5);
+  sleep_us(100);
   pullHigh(pinConfig.writeStrobe);
 }
 void DisplayIO::pullHigh(uint pin)

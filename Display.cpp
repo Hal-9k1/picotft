@@ -14,7 +14,8 @@ Display::Display(DisplayIO *pDisplayIO)
   uint8_t pixelFormat = 0x55;
   pDisplayIO->writeCmd(0x3A, 1, &pixelFormat);
   //setDisplayOn(true);
-  //setBacklightBrightness(255); // max brightness
+  setBacklightBrightness(255); // max brightness
+  //pDisplayIO->writeCmd(0x21, 0, nullptr); // invert for testing
 }
 
 void Display::setBacklightBrightness(std::uint8_t brightness)
@@ -30,32 +31,49 @@ void Display::setSleepOn(bool on)
   pDisplayIO->writeCmd(on ? 0x10 : 0x11, 0, nullptr);
 }
 void Display::writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
-  std::uint16_t endRow, std::uint16_t *pPixelData)
+  std::uint16_t endRow, const std::uint8_t *pPixelData)
+{
+  setWriteWindow(startCol, endCol, startRow, endRow);
+  std::size_t numPixels = (endCol - startCol + 1) * (endRow - startRow + 1);
+  pDisplayIO->writeCmd(0x2C, numPixels * 2, pPixelData);
+}
+void Display::clear(std::uint16_t color)
+{
+  std::uint8_t pPixelData[] = {
+    static_cast<std::uint8_t>(color >> 8),
+    static_cast<std::uint8_t>(color & 0xFF),
+  };
+  writeRepeatingPixelBlock(0, 0x013F, 0, 0x01DF, 1, pPixelData);
+}
+void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t endCol,
+  std::uint16_t startRow, std::uint16_t endRow, std::size_t pixelCount,
+  const std::uint8_t *pPixelData)
+{
+  setWriteWindow(startCol, endCol, startRow, endRow);
+  std::size_t numWrittenPixels = (endCol - startCol + 1) * (endRow - startRow + 1);
+  pDisplayIO->writeCmdHeader(0x2C);
+  for (std::size_t i = 0; i < numWrittenPixels; ++i)
+  {
+    pDisplayIO->writeByte(pPixelData[i % (pixelCount * 2)]);
+  }
+  pDisplayIO->endCmdWrite();
+}
+
+void Display::setWriteWindow(std::uint16_t startCol, std::uint16_t endCol,
+  std::uint16_t startRow, std::uint16_t endRow)
 {
   std::uint8_t colAddrParam[] = {
-    static_cast<std::uint8_t>((startCol >> 8) & 0xFF),
+    static_cast<std::uint8_t>(startCol >> 8),
     static_cast<std::uint8_t>(startCol & 0xFF),
-    static_cast<std::uint8_t>((endCol >> 8) & 0xFF),
+    static_cast<std::uint8_t>(endCol >> 8),
     static_cast<std::uint8_t>(endCol & 0xFF)
   };
   pDisplayIO->writeCmd(0x2A, 4, colAddrParam);
   std::uint8_t pageAddrParam[] = {
-    static_cast<std::uint8_t>((startRow >> 8) & 0xFF),
+    static_cast<std::uint8_t>(startRow >> 8),
     static_cast<std::uint8_t>(startRow & 0xFF),
-    static_cast<std::uint8_t>((endCol >> 8) & 0xFF),
-    static_cast<std::uint8_t>(endCol & 0xFF)
+    static_cast<std::uint8_t>(endRow >> 8),
+    static_cast<std::uint8_t>(endRow & 0xFF)
   };
   pDisplayIO->writeCmd(0x2B, 4, pageAddrParam);
-  std::size_t numPixels = (endCol - startCol) * (endRow - startRow);
-  // remember 2 bytes per pixel:
-  std::uint8_t *pPixelBytes = new std::uint8_t[numPixels * 2];
-  // this loop SUCKS. if this becomes a bottleneck consider some weird aliasing trick (can you do
-  // that with uint8_t instead of char?) or maybe just memcpy the whole array if host and LCD
-  // endianness match
-  for (std::size_t i = 0; i < numPixels; ++i)
-  {
-    pPixelBytes[i] = (pPixelData[i] & 0xFF00) >> 8;
-    pPixelBytes[i + 1] = pPixelData[i] & 0x00FF;
-  }
-  pDisplayIO->writeCmd(0x2C, numPixels * 2, pPixelBytes);
 }
