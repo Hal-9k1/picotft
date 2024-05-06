@@ -12,6 +12,7 @@ public:
   void setBacklightBrightness(std::uint8_t brightness);
   void setDisplayOn(bool on);
   void setSleepOn(bool on);
+  void setInvertOn(bool on);
   void writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
     std::uint16_t endRow, const std::uint8_t *pPixelData);
   void clear(std::uint16_t color);

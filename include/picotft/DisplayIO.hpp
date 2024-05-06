@@ -8,6 +8,7 @@ class DisplayIO
 {
 public:
   DisplayIO(const PinConfig &pinConfig, uint readBufferLength);
+  ~DisplayIO();
 
   void writeCmd(std::uint8_t cmdByte, uint dataLen, const std::uint8_t *pDataBytes);
   void writeCmdHeader(std::uint8_t cmdByte);

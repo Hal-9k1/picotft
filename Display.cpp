@@ -8,14 +8,15 @@ Display::Display(DisplayIO *pDisplayIO)
   : pDisplayIO(pDisplayIO)
 {
   // set the pixel format
-  // 0x50: use R5G6B5 format for DPI interface (for direct writing to the display, which we probably
+  // 0x50: use B5G6R5 format for DPI interface (for direct writing to the display, which we probably
   //   won't use so I'm not sure if it's necessary to set this)
-  // 0x05: use R5G6B5 format for DBI interface (for writing to display RAM)
+  // 0x05: use B5G6R5 format for DBI interface (for writing to display RAM)
   uint8_t pixelFormat = 0x55;
   pDisplayIO->writeCmd(0x3A, 1, &pixelFormat);
-  //setDisplayOn(true);
+  setDisplayOn(true);
+  setSleepOn(false);
+  setInvertOn(false);
   setBacklightBrightness(255); // max brightness
-  //pDisplayIO->writeCmd(0x21, 0, nullptr); // invert for testing
 }
 
 void Display::setBacklightBrightness(std::uint8_t brightness)
@@ -29,6 +30,10 @@ void Display::setDisplayOn(bool on)
 void Display::setSleepOn(bool on)
 {
   pDisplayIO->writeCmd(on ? 0x10 : 0x11, 0, nullptr);
+}
+void Display::setInvertOn(bool on)
+{
+  pDisplayIO->writeCmd(on ? 0x21 : 0x20, 0, nullptr);
 }
 void Display::writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
   std::uint16_t endRow, const std::uint8_t *pPixelData)
@@ -50,7 +55,8 @@ void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t end
   const std::uint8_t *pPixelData)
 {
   setWriteWindow(startCol, endCol, startRow, endRow);
-  std::size_t numWrittenPixels = (endCol - startCol + 1) * (endRow - startRow + 1);
+  // multiply by 2 because 2 bytes per pixel
+  std::size_t numWrittenPixels = (endCol - startCol + 1) * (endRow - startRow + 1) * 2;
   pDisplayIO->writeCmdHeader(0x2C);
   for (std::size_t i = 0; i < numWrittenPixels; ++i)
   {

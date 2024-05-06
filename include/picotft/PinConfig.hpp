@@ -10,6 +10,7 @@ struct PinConfig
   uint cmdSwitch;
   uint writeStrobe;
   uint readStrobe;
+  uint reset;
 };
 
 #endif // PICOTFT_PINCONFIG_HPP

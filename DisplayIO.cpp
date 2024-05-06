@@ -27,16 +27,25 @@ DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
     driveLow(pinConfig.bus[i]);
   }
   gpio_init(pinConfig.chipSel);
-  pullHigh(pinConfig.chipSel);
+  driveHigh(pinConfig.chipSel);
 
   gpio_init(pinConfig.cmdSwitch);
-  pullHigh(pinConfig.cmdSwitch);
+  driveHigh(pinConfig.cmdSwitch);
 
   gpio_init(pinConfig.writeStrobe);
-  pullHigh(pinConfig.writeStrobe);
+  driveHigh(pinConfig.writeStrobe);
 
   gpio_init(pinConfig.readStrobe);
   pullHigh(pinConfig.readStrobe);
+
+  gpio_init(pinConfig.reset);
+  driveHigh(pinConfig.reset);
+  sleep_ms(100);
+  driveLow(pinConfig.reset);
+  sleep_us(10);
+  driveHigh(pinConfig.reset);
+  sleep_ms(120);
+
   // note: this callback will be used for ALL IRQs on this core (hence the callback's first
   // parameter "gpio", the gpio that caused the interrupt.)
   gpio_set_irq_enabled_with_callback(pinConfig.readStrobe, GPIO_IRQ_EDGE_RISE, true,
@@ -44,6 +53,13 @@ DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   // ew singleton:
   assert(!pInstance);
   pInstance = this;
+
+  std::uint8_t colPageSwapByte = 32;
+  writeCmd(0x36, 1, &colPageSwapByte);
+}
+DisplayIO::~DisplayIO()
+{
+  delete[] buf;
 }
 
 void DisplayIO::writeCmd(std::uint8_t cmdByte, uint dataLen, const std::uint8_t *pDataBytes)
@@ -60,7 +76,7 @@ void DisplayIO::writeCmdHeader(std::uint8_t cmdByte)
   driveLow(pinConfig.chipSel);
   driveLow(pinConfig.cmdSwitch);
   writeByte(cmdByte);
-  pullHigh(pinConfig.cmdSwitch);
+  driveHigh(pinConfig.cmdSwitch);
 }
 void DisplayIO::endCmdWrite()
 {
@@ -68,7 +84,7 @@ void DisplayIO::endCmdWrite()
   {
     driveLow(pinConfig.bus[i]);
   }
-  pullHigh(pinConfig.chipSel);
+  driveHigh(pinConfig.chipSel);
 }
 std::uint8_t DisplayIO::waitReadByte()
 {
@@ -122,7 +138,6 @@ void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
 void DisplayIO::writeByte(std::uint8_t byte)
 {
   //std::printf("Writing byte %02X\n", byte);
-  driveLow(pinConfig.writeStrobe);
   for (uint i = 0; i < 8; ++i)
   {
     if ((byte & (1 << i)) == 0)
@@ -134,8 +149,9 @@ void DisplayIO::writeByte(std::uint8_t byte)
       driveHigh(pinConfig.bus[i]);
     }
   }
-  sleep_us(100);
-  pullHigh(pinConfig.writeStrobe);
+  driveLow(pinConfig.writeStrobe);
+  //sleep_us(10);
+  driveHigh(pinConfig.writeStrobe);
 }
 void DisplayIO::pullHigh(uint pin)
 {
