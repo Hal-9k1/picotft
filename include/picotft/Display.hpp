@@ -7,12 +7,18 @@
 class Display
 {
 public:
-  Display(DisplayIO *pDisplayIO);
+  enum DisplayOrientation
+  {
+    PORTRAIT = 0,
+    LANDSCAPE = 1
+  };
+  Display(DisplayIO *pDisplayIO, DisplayOrientation initialOrientation);
   
   void setBacklightBrightness(std::uint8_t brightness);
   void setDisplayOn(bool on);
   void setSleepOn(bool on);
   void setInvertOn(bool on);
+  void setOrientation(DisplayOrientation orientation);
   void writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
     std::uint16_t endRow, const std::uint8_t *pPixelData);
   void clear(std::uint16_t color);
@@ -22,9 +28,11 @@ public:
 
 private:
   DisplayIO *pDisplayIO;
+  std::uint8_t dmacByte; // Device Memory Access Control
 
   void setWriteWindow(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
     std::uint16_t endRow);
+  void writeDmacByte();
 };
 
 #endif // PICOTFT_DISPLAY_HPP

@@ -53,9 +53,6 @@ DisplayIO::DisplayIO(const PinConfig &pinConfig, uint readBufferLength)
   // ew singleton:
   assert(!pInstance);
   pInstance = this;
-
-  std::uint8_t colPageSwapByte = 32;
-  writeCmd(0x36, 1, &colPageSwapByte);
 }
 DisplayIO::~DisplayIO()
 {

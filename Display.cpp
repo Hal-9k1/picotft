@@ -4,7 +4,7 @@
 #include <cstddef>
 #include "picotft/DisplayIO.hpp"
 
-Display::Display(DisplayIO *pDisplayIO)
+Display::Display(DisplayIO *pDisplayIO, DisplayOrientation initialOrientation)
   : pDisplayIO(pDisplayIO)
 {
   // set the pixel format
@@ -17,6 +17,8 @@ Display::Display(DisplayIO *pDisplayIO)
   setSleepOn(false);
   setInvertOn(false);
   setBacklightBrightness(255); // max brightness
+  dmacByte = static_cast<std::uint8_t>(initialOrientation) << 5;
+  writeDmacByte();
 }
 
 void Display::setBacklightBrightness(std::uint8_t brightness)
@@ -34,6 +36,11 @@ void Display::setSleepOn(bool on)
 void Display::setInvertOn(bool on)
 {
   pDisplayIO->writeCmd(on ? 0x21 : 0x20, 0, nullptr);
+}
+void Display::setOrientation(DisplayOrientation orientation)
+{
+  dmacByte |= static_cast<std::uint8_t>(orientation) << 5;
+  writeDmacByte();
 }
 void Display::writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
   std::uint16_t endRow, const std::uint8_t *pPixelData)
@@ -82,4 +89,8 @@ void Display::setWriteWindow(std::uint16_t startCol, std::uint16_t endCol,
     static_cast<std::uint8_t>(endRow & 0xFF)
   };
   pDisplayIO->writeCmd(0x2B, 4, pageAddrParam);
+}
+void Display::writeDmacByte()
+{
+  pDisplayIO->writeCmd(0x36, 1, &dmacByte);
 }
