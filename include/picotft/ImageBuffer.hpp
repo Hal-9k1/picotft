@@ -8,7 +8,9 @@ public:
   T &accessRaw(int x, int y);
   T getInterpolated(float x, float y);
   void copyFromLinear(const char *pLinearBuffer, int x, int y, int width, int height);
-  void copyFromImage(const ImageBuffer &src, int x, int y, int width, int height);
+  template <typename U>
+  void copyFromImage(const ImageBuffer<U> &src, int x, int y, int width, int height);
+  void getSize(int &width, int &height);
 
 private:
   T *pBuffer;

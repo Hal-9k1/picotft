@@ -55,7 +55,7 @@ void Display::clear(std::uint16_t color)
     static_cast<std::uint8_t>(color >> 8),
     static_cast<std::uint8_t>(color & 0xFF),
   };
-  writeRepeatingPixelBlock(0, 0x013F, 0, 0x01DF, 1, pPixelData);
+  writeRepeatingPixelBlock(0, 0x01DF, 0, 0x013F, 1, pPixelData);
 }
 void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t endCol,
   std::uint16_t startRow, std::uint16_t endRow, std::size_t pixelCount,

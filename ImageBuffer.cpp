@@ -2,7 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
-
+#include <cstring>
 
 template<typename T>
 ImageBuffer<T>::ImageBuffer(int width, int height, int channels)
@@ -42,12 +42,18 @@ void ImageBuffer<T>::copyFromLinear(const char *pLinearBuffer, int srcX, int src
   }
 }
 template<typename T>
-void ImageBuffer<T>::copyFromImage(const ImageBuffer &src, int srcX, int srcY, int width,
+void ImageBuffer<T>::copyFromImage(const ImageBuffer<T> &src, int srcX, int srcY, int width,
   int height, int dstX, int dstY)
 {
   // images are currently stored linearly
   copyFromLinear(reinterpret_cast<const char *>(src.pBuffer), srcX, srcY, width, height, dstX,
     dstY);
+}
+template<typename T>
+void ImageBuffer<T>::getSize(int &width, int &height)
+{
+  width = this->width;
+  height = this->height;
 }
 
 template<typename T>
