@@ -2,6 +2,7 @@
 #define PICOTFT_RENDERER_HPP
 #include "picotft/include/Display.hpp"
 #include "picotft/include/RenderObject.hpp"
+#include <map>
 #include <vector>
 
 class Renderer
@@ -14,6 +15,6 @@ public:
 
 private:
   const Display &display;
-  std::vector<RenderObject *> pObjects;
+  std::map<float, std::unordered_set<RenderObject *>> objectBuckets;
 };
 #endif // PICOTFT_RENDERER_HPP
