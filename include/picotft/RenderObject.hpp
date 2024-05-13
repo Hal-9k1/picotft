@@ -10,7 +10,8 @@ public:
   float getZ();
   bool doesIntersect(const RectF &intersectRect);
   bool doesContainPoint(float x, float y);
-  virtual void runShader(const ShaderInvocationInfo &info) = 0;
+  virtual bool runShader(const ShaderInvocationInfo &info) = 0;
+  virtual int getColorDepth() = 0;
 protected:
   RenderObject(const RectF &bounds, float z);
 private:

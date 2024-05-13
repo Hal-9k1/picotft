@@ -29,7 +29,11 @@ endif()
 #endif()
 
 add_library(picotft
-  Display.cpp DisplayIO.cpp)
+  Display.cpp
+  DisplayIO.cpp
+  ImageBuffer.cpp
+  Renderer.cpp
+  RenderObject.cpp)
 
 target_include_directories(picotft
   PUBLIC

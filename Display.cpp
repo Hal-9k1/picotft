@@ -71,6 +71,12 @@ void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t end
   }
   pDisplayIO->endCmdWrite();
 }
+void Display::getSize(int &width, int &height)
+{
+  bool isLandscape = dmacByte & (1 << 5);
+  width = isLandscape ? 480 : 320;
+  height = isLandscape ? 320 : 480;
+}
 
 void Display::setWriteWindow(std::uint16_t startCol, std::uint16_t endCol,
   std::uint16_t startRow, std::uint16_t endRow)

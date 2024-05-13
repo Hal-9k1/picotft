@@ -1,28 +1,32 @@
 #ifndef PICOTFT_IMAGEBUFFER_HPP
 #define PICOTFT_IMAGEBUFFER_HPP
-template<typename T>
 class ImageBuffer
 {
 public:
-  ImageBuffer(int width, int height, int channels);
-  T &accessRaw(int x, int y);
-  T getInterpolated(float x, float y);
+  ImageBuffer(int width, int height, int channels, int bytesPerPixel);
+  ImageBuffer(int width, int height, int channels, int bytesPerPixel, const char *pLinearBuffer);
+  void getRaw(int x, int y, void *pOut);
+  void setRaw(int x, int y, void *pData);
+  void getInterpolated(float x, float y, void *pOut);
   void copyFromLinear(const char *pLinearBuffer, int x, int y, int width, int height);
-  template <typename U>
-  void copyFromImage(const ImageBuffer<U> &src, int x, int y, int width, int height);
+  void copyFromImage(const ImageBuffer &src, int x, int y, int width, int height);
   void getSize(int &width, int &height);
 
 private:
-  T *pBuffer;
+  enum Layout
+  {
+    LINEAR
+  };
+
   int width;
   int height;
   int channelCount;
+  int bitsPerChannel;
+  int bytesPerPixel;
+  char *pBuffer;
+  Layout layout;
 
-  int getChannel(const T &color, int channel);
-  int setChannel(T &color, int channel, int value);
+  int getChannel(const char *pColor, int channel);
+  int setChannel(char *pColor, int channel, int value);
 };
-
-template class ImageBuffer<std::uint8_t>;
-template class ImageBuffer<std::uint16_t>;
-template class ImageBuffer<std::uint32_t>;
 #endif // PICOTFT_IMAGEBUFFER_HPP
