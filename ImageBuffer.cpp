@@ -81,13 +81,30 @@ int ImageBuffer::getChannel(const unsigned char *pColor, int channel)
     }
   }
   int shift = bitsPerChannel * (channelCount - channel - 1);
-  int mask = ~(~1u << bitsPerChannel);
-  return (color >> shift) & mask;
+  unsigned char *pMem = new unsigned char[bytesPerPixel * 2];
+  unsigned char *pResultBuf = pMem;
+  unsigned char *pMaskBuf = pMem + bytesPerPixel;
+  valueToMsbBuffer(~(~1u << bitsPerChannel), pMaskBuf);
+  valueToMsbBuffer(color >> shift, pResultBuf);
+  for (int i = 0; i < bytesPerPixel; ++i)
+  {
+    pResultBuf[i] &= pMaskBuf[i];
+  }
+  int value = msbBufferToValue(pResultBuf);
+  delete[] pMaskBuf;
+  delete[] pResultBuf;
+  return value;
 }
 int ImageBuffer::setChannel(unsigned char *pColor, int channel, int value)
 {
   int shift = bitsPerChannel * (channelCount - channel - 1);
-  color |= value << shift;
+  unsigned char *pBuf = new unsigned char[bytesPerPixel];
+  valueToMsbBuffer(value << shift, pBuf);
+  for (int i = 0; i < bytesPerPixel; ++i)
+  {
+    pColor[i] |= pBuf[i];
+  }
+  delete[] pBuf;
 }
 int ImageBuffer::lerpColors(const unsigned char *pColorA, const unsigned char *pColorB, float fac,
   unsigned char *pOut)
@@ -99,4 +116,20 @@ int ImageBuffer::lerpColors(const unsigned char *pColorA, const unsigned char *p
     int lerped = channelA + static_cast<float>(channelB - channelA) * fac;
     setChannel(res, i, lerped);
   }
+}
+void ImageBuffer::valueToMsbBuffer(int value, unsigned char *pBuf)
+{
+  for (int i = 0; i < bytesPerPixel; ++i)
+  {
+    pBuf[bytesPerPixel - 1 - i] = (value >> (8 * i)) & 0xFF;
+  }
+}
+int ImageBuffer::msbBufferToValue(const unsigned char *pBuf)
+{
+  int value = 0;
+  for (int i = 0; i < bytesPerPixel; ++i)
+  {
+    value |= (pBuf[bytesPerPixel - 1 - i]) << (i * 8);
+  }
+  return value;
 }
