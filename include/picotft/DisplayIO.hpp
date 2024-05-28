@@ -10,7 +10,7 @@ public:
   DisplayIO(const PinConfig &pinConfig, uint readBufferLength);
   ~DisplayIO();
 
-  void writeCmd(std::uint8_t cmdByte, uint dataLen, const std::uint8_t *pDataBytes);
+  void writeCmd(std::uint8_t cmdByte, uint dataLen, bool swapBytePairs, const std::uint8_t *pDataBytes);
   void writeCmdHeader(std::uint8_t cmdByte);
   void writeByte(std::uint8_t byte);
   void endCmdWrite();

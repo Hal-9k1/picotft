@@ -1,6 +1,6 @@
-#include "picotft/include/RenderObject.hpp"
+#include "picotft/RenderObject.hpp"
 
-#include "picotft/include/RectF.hpp"
+#include "picotft/RectF.hpp"
 
 const RectF &RenderObject::getBounds()
 {
@@ -19,7 +19,7 @@ bool RenderObject::doesIntersect(const RectF &intersectRect)
 }
 bool RenderObject::doesContainPoint(float x, float y)
 {
-  return bounds.x < x && bounds.x + width > x
+  return bounds.x < x && bounds.x + bounds.width > x
     && bounds.y < y && bounds.y + bounds.height > y;
 }
 RenderObject::RenderObject(const RectF &bounds, float z)

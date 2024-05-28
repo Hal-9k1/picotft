@@ -12,7 +12,7 @@ Display::Display(DisplayIO *pDisplayIO, DisplayOrientation initialOrientation)
   //   won't use so I'm not sure if it's necessary to set this)
   // 0x05: use B5G6R5 format for DBI interface (for writing to display RAM)
   uint8_t pixelFormat = 0x55;
-  pDisplayIO->writeCmd(0x3A, 1, &pixelFormat);
+  pDisplayIO->writeCmd(0x3A, 1, true, &pixelFormat);
   setDisplayOn(true);
   setSleepOn(false);
   setInvertOn(false);
@@ -23,19 +23,19 @@ Display::Display(DisplayIO *pDisplayIO, DisplayOrientation initialOrientation)
 
 void Display::setBacklightBrightness(std::uint8_t brightness)
 {
-  pDisplayIO->writeCmd(0x51, 1, &brightness);
+  pDisplayIO->writeCmd(0x51, 1, true, &brightness);
 }
 void Display::setDisplayOn(bool on)
 {
-  pDisplayIO->writeCmd(on ? 0x29 : 0x28, 0, nullptr);
+  pDisplayIO->writeCmd(on ? 0x29 : 0x28, 0, true, nullptr);
 }
 void Display::setSleepOn(bool on)
 {
-  pDisplayIO->writeCmd(on ? 0x10 : 0x11, 0, nullptr);
+  pDisplayIO->writeCmd(on ? 0x10 : 0x11, 0, true, nullptr);
 }
 void Display::setInvertOn(bool on)
 {
-  pDisplayIO->writeCmd(on ? 0x21 : 0x20, 0, nullptr);
+  pDisplayIO->writeCmd(on ? 0x21 : 0x20, 0, true, nullptr);
 }
 void Display::setOrientation(DisplayOrientation orientation)
 {
@@ -43,11 +43,11 @@ void Display::setOrientation(DisplayOrientation orientation)
   writeDmacByte();
 }
 void Display::writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
-  std::uint16_t endRow, const std::uint8_t *pPixelData)
+  std::uint16_t endRow, bool bigEndian, const std::uint8_t *pPixelData)
 {
   setWriteWindow(startCol, endCol, startRow, endRow);
   std::size_t numPixels = (endCol - startCol + 1) * (endRow - startRow + 1);
-  pDisplayIO->writeCmd(0x2C, numPixels * 2, pPixelData);
+  pDisplayIO->writeCmd(0x2C, numPixels * 2, !bigEndian, pPixelData);
 }
 void Display::clear(std::uint16_t color)
 {
@@ -55,10 +55,10 @@ void Display::clear(std::uint16_t color)
     static_cast<std::uint8_t>(color >> 8),
     static_cast<std::uint8_t>(color & 0xFF),
   };
-  writeRepeatingPixelBlock(0, 0x01DF, 0, 0x013F, 1, pPixelData);
+  writeRepeatingPixelBlock(0, 0x01DF, 0, 0x013F, true, 1, pPixelData);
 }
 void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t endCol,
-  std::uint16_t startRow, std::uint16_t endRow, std::size_t pixelCount,
+  std::uint16_t startRow, std::uint16_t endRow, bool bigEndian, std::size_t pixelCount,
   const std::uint8_t *pPixelData)
 {
   setWriteWindow(startCol, endCol, startRow, endRow);
@@ -67,7 +67,9 @@ void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t end
   pDisplayIO->writeCmdHeader(0x2C);
   for (std::size_t i = 0; i < numWrittenPixels; ++i)
   {
-    pDisplayIO->writeByte(pPixelData[i % (pixelCount * 2)]);
+    // swap every 2 bytes (2 bytes per pixel)
+    int endianOffset = (bigEndian && i + 1 < numWrittenPixels) ? !(i % 2) * 2 - 1 : 0;
+    pDisplayIO->writeByte(pPixelData[i % (pixelCount * 2) + endianOffset]);
   }
   pDisplayIO->endCmdWrite();
 }
@@ -87,16 +89,16 @@ void Display::setWriteWindow(std::uint16_t startCol, std::uint16_t endCol,
     static_cast<std::uint8_t>(endCol >> 8),
     static_cast<std::uint8_t>(endCol & 0xFF)
   };
-  pDisplayIO->writeCmd(0x2A, 4, colAddrParam);
+  pDisplayIO->writeCmd(0x2A, 4, true, colAddrParam);
   std::uint8_t pageAddrParam[] = {
     static_cast<std::uint8_t>(startRow >> 8),
     static_cast<std::uint8_t>(startRow & 0xFF),
     static_cast<std::uint8_t>(endRow >> 8),
     static_cast<std::uint8_t>(endRow & 0xFF)
   };
-  pDisplayIO->writeCmd(0x2B, 4, pageAddrParam);
+  pDisplayIO->writeCmd(0x2B, 4, true, pageAddrParam);
 }
 void Display::writeDmacByte()
 {
-  pDisplayIO->writeCmd(0x36, 1, &dmacByte);
+  pDisplayIO->writeCmd(0x36, 1, true, &dmacByte);
 }

@@ -68,8 +68,10 @@ target_link_options(picotft_warnings INTERFACE
   ${PICOTFT_UNIVERSAL_WARNINGS})
 
 ignore_library_warnings(pico_stdlib)
+ignore_library_warnings(pico_multicore)
 target_link_libraries(picotft PUBLIC
-  pico_stdlib)
+  pico_stdlib
+  pico_multicore)
 
 #ignore_library_warnings(pico_cyw43_arch_none)
 target_link_libraries(picotft PUBLIC

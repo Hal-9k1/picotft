@@ -1,7 +1,7 @@
 #ifndef PICOTFT_RENDEROBJECT_HPP
 #define PICOTFT_RENDEROBJECT_HPP
-#include "picotft/include/RectF.hpp"
-#include "picotft/include/ShaderInvocationInfo.hpp"
+#include "picotft/RectF.hpp"
+#include "picotft/ShaderInvocationInfo.hpp"
 
 class RenderObject
 {

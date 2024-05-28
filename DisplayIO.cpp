@@ -59,12 +59,15 @@ DisplayIO::~DisplayIO()
   delete[] buf;
 }
 
-void DisplayIO::writeCmd(std::uint8_t cmdByte, uint dataLen, const std::uint8_t *pDataBytes)
+void DisplayIO::writeCmd(std::uint8_t cmdByte, uint dataLen, bool swapBytePairs,
+  const std::uint8_t *pDataBytes)
 {
   writeCmdHeader(cmdByte);
   for (uint i = 0; i < dataLen; ++i)
   {
-    writeByte(pDataBytes[i]);
+    // little endian correction assumes 2 byte values:
+    int endianOffset = (swapBytePairs && i + 1 < dataLen) ? !(i % 2) * 2 - 1 : 0;
+    writeByte(pDataBytes[i + endianOffset]);
   }
   endCmdWrite();
 }

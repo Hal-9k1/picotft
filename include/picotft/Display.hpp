@@ -20,10 +20,10 @@ public:
   void setInvertOn(bool on);
   void setOrientation(DisplayOrientation orientation);
   void writePixelBlock(std::uint16_t startCol, std::uint16_t endCol, std::uint16_t startRow,
-    std::uint16_t endRow, const std::uint8_t *pPixelData);
+    std::uint16_t endRow, bool bigEndian, const std::uint8_t *pPixelData);
   void clear(std::uint16_t color);
   void writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t endCol,
-    std::uint16_t startRow, std::uint16_t endRow, std::size_t pixelCount,
+    std::uint16_t startRow, std::uint16_t endRow, bool bigEndian, std::size_t pixelCount,
     const std::uint8_t *pPixelData);
   void getSize(int &width, int &height);
 

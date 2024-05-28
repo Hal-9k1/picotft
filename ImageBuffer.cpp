@@ -12,7 +12,8 @@ ImageBuffer::ImageBuffer(int width, int height, int channels, int bytesPerPixel)
     pBuffer(new char[width * height * bytesPerPixel]),
     layout(LINEAR)
 { }
-ImageBuffer::ImageBuffer(int width, int height, int channels, const char *pLinearBuffer)
+ImageBuffer::ImageBuffer(int width, int height, int channels, int bytesPerPixel,
+  const char *pLinearBuffer)
   : width(width), 
     height(height),
     channelCount(channels),
@@ -23,10 +24,20 @@ ImageBuffer::ImageBuffer(int width, int height, int channels, const char *pLinea
     layout(LINEAR)
 { }
 
-void ImageBuffer::getRaw(int x, int y, void *pOut);
+void ImageBuffer::getRaw(int x, int y, void *pOut)
 {
   // linear storage, for now. consider tiles for better memory locality.
-  std::memcpy(pOut, pBuffer + x + y * width, bytesPerPixel);
+  std::memcpy(pOut, addressRaw(x, y), bytesPerPixel);
+}
+void ImageBuffer::setRaw(int x, int y, void *pData)
+{
+  // the implementation knows the const from addressRaw is artificial UNLESS the image memory is
+  // read only, but in that case it's an error to call this function anyways.
+  std::memcpy(const_cast<char *>(addressRaw(x, y)), pData, bytesPerPixel);
+}
+const char *ImageBuffer::addressRaw(int x, int y)
+{
+  return pBuffer + (x + y * width) * bytesPerPixel;
 }
 void ImageBuffer::getInterpolated(float x, float y, void *pOut)
 {
@@ -37,18 +48,25 @@ void ImageBuffer::getInterpolated(float x, float y, void *pOut)
   int cy = std::ceil(y);
   int dx = x - fx;
   int dy = y - fy;
-  return lerpColors(
-    lerpColors(accessRaw(fx, fy), accessRaw(fx, cy), dy),
-    lerpColors(accessRaw(cx, fy), accessRaw(cx, cy), dy),
-    dx);
+  unsigned char *pMem = new unsigned char[3 * bytesPerPixel];
+  unsigned char *pLeftLerpColor = pMem;
+  unsigned char *pRightLerpColor = pMem + bytesPerPixel;
+  unsigned char *pResult = pMem + bytesPerPixel * 2;
+  lerpColors(reinterpret_cast<const unsigned char *>(addressRaw(fx, fy)),
+    reinterpret_cast<const unsigned char *>(addressRaw(fx, cy)), dy, pLeftLerpColor);
+  lerpColors(reinterpret_cast<const unsigned char *>(addressRaw(cx, fy)),
+    reinterpret_cast<const unsigned char *>(addressRaw(cx, cy)), dy, pRightLerpColor);
+  lerpColors(pLeftLerpColor, pRightLerpColor, dx, pResult);
+  std::memcpy(pOut, pResult, bytesPerPixel);
+  delete[] pMem;
 }
 void ImageBuffer::copyFromLinear(const char *pLinearBuffer, int srcX, int srcY, int width,
   int height, int dstX, int dstY)
 {
-  for (int i = srcY; i < height; ++i)
+  for (int i = 0; i < height; ++i)
   {
-    std::memcpy(pBuffer + bytesPerPixel * (srcX + i * width),
-      pLinearBuffer + bytesPerPixel * (dstX + i * width),
+    std::memcpy(pBuffer + bytesPerPixel * (dstX + (i + dstY) * width),
+      pLinearBuffer + bytesPerPixel * (srcX + (i + srcY) * width),
       width);
   }
 }
@@ -84,18 +102,24 @@ int ImageBuffer::getChannel(const unsigned char *pColor, int channel)
   unsigned char *pMem = new unsigned char[bytesPerPixel * 2];
   unsigned char *pResultBuf = pMem;
   unsigned char *pMaskBuf = pMem + bytesPerPixel;
-  valueToMsbBuffer(~(~1u << bitsPerChannel), pMaskBuf);
-  valueToMsbBuffer(color >> shift, pResultBuf);
+  valueToMsbBuffer(~(~0u << bitsPerChannel), pMaskBuf);
   for (int i = 0; i < bytesPerPixel; ++i)
   {
-    pResultBuf[i] &= pMaskBuf[i];
+    // rshift by shift:
+    int shiftCharCount = shift / 8;
+    int shiftBitCount = shift % 8;
+    unsigned char shiftedLow = shiftCharCount > i ? 0 : pColor[i - shiftCharCount];
+    unsigned char shiftedHigh = shiftCharCount + 1 > i ? 0 : pColor[i - shiftCharCount - 1];
+    unsigned char shiftedChar = shiftedLow >> shiftBitCount | shiftedHigh << (8 - shiftBitCount);
+    // mask against pMaskBuf:
+    pResultBuf[i] = shiftedChar & pMaskBuf[i];
   }
   int value = msbBufferToValue(pResultBuf);
   delete[] pMaskBuf;
   delete[] pResultBuf;
   return value;
 }
-int ImageBuffer::setChannel(unsigned char *pColor, int channel, int value)
+void ImageBuffer::setChannel(unsigned char *pColor, int channel, int value)
 {
   int shift = bitsPerChannel * (channelCount - channel - 1);
   unsigned char *pBuf = new unsigned char[bytesPerPixel];
@@ -106,15 +130,15 @@ int ImageBuffer::setChannel(unsigned char *pColor, int channel, int value)
   }
   delete[] pBuf;
 }
-int ImageBuffer::lerpColors(const unsigned char *pColorA, const unsigned char *pColorB, float fac,
+void ImageBuffer::lerpColors(const unsigned char *pColorA, const unsigned char *pColorB, float fac,
   unsigned char *pOut)
 {
   for (int i = 0; i < channelCount; ++i)
   {
-    int channelA = getChannel(colorA, i);
-    int channelB = getChannel(colorB, i);
+    int channelA = getChannel(pColorA, i);
+    int channelB = getChannel(pColorB, i);
     int lerped = channelA + static_cast<float>(channelB - channelA) * fac;
-    setChannel(res, i, lerped);
+    setChannel(pOut, i, lerped);
   }
 }
 void ImageBuffer::valueToMsbBuffer(int value, unsigned char *pBuf)

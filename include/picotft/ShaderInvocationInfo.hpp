@@ -8,6 +8,6 @@ struct ShaderInvocationInfo
   float normFragY;
   float screenX;
   float screenY;
-  std::uint32_t *pOutColor;
+  void *pOutColor;
 };
 #endif // PICOTFT_SHADERINVOCATIONINFO_HPP

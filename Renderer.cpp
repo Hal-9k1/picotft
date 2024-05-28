@@ -1,13 +1,13 @@
-#include "picotft/include/Renderer.hpp"
+#include "picotft/Renderer.hpp"
 
-#include "picotft/include/RenderObject.hpp"
-#include "picotft/include/Display.hpp"
+#include "hardware/sync.h"
+#include "picotft/RenderObject.hpp"
+#include "picotft/Display.hpp"
 #include "pico/multicore.h"
 #include <map>
-#include <mutex>
 #include <unordered_set>
 
-Renderer::Renderer(const Display &display, int tilesX, int tilesY)
+Renderer::Renderer(Display &display, int tilesX, int tilesY)
   : display(display), tilesX(tilesX), tilesY(tilesY)
 {
   pTiles = new std::map<float, std::unordered_set<RenderObject *>>[tilesX * tilesY];
@@ -16,6 +16,7 @@ Renderer::Renderer(const Display &display, int tilesX, int tilesY)
   display.getSize(displayWidth, displayHeight);
   tileWidth = displayWidth / tilesX;
   tileHeight = displayHeight / tilesY;
+  pPixelBufMemory = new std::uint16_t[tileWidth * tileHeight * 2]; // one tile buffer per core
 }
 
 void Renderer::addObject(RenderObject *pObject)
@@ -33,7 +34,7 @@ void Renderer::addObject(RenderObject *pObject)
     }
   }
 }
-void Renderer::removeObject(RenderObject *pObject);
+void Renderer::removeObject(RenderObject *pObject)
 {
   for (int i = 0; i < tilesX * tilesY; ++i)
   {
@@ -42,25 +43,30 @@ void Renderer::removeObject(RenderObject *pObject);
 }
 void Renderer::render()
 {
+  uint spinlockId = static_cast<uint>(spin_lock_claim_unused(true));
+  tileWriteSpinlock = spin_lock_instance(spinlockId);
   multicore_reset_core1();
-  multicore_fifo_push_blocking(static_cast<std::uint32_t>(this));
+  static_assert(sizeof(this) == sizeof(std::uint32_t),
+    "Can't push pointer onto multicore FIFO if not building on 32-bit machine!");
+  multicore_fifo_push_blocking(reinterpret_cast<std::uint32_t>(this));
   multicore_launch_core1(alternateCoreRender);
   coreRender(0);
+  spin_lock_unclaim(spinlockId);
 }
 
-static void Renderer::alternateCoreRender()
+void Renderer::alternateCoreRender()
 {
-  Renderer *that = static_cast<Renderer *>(multicore_fifo_pop_blocking());
+  Renderer *that = reinterpret_cast<Renderer *>(multicore_fifo_pop_blocking());
   that->coreRender(1);
 }
 void Renderer::coreRender(int core)
 {
   for (int i = core; i < tilesX * tilesY; i += 2)
   {
-    renderTile(i);
+    renderTile(i, pPixelBufMemory + core * tileWidth * tileHeight);
   }
 }
-void Renderer::renderTile(int tileIdx)
+void Renderer::renderTile(int tileIdx, std::uint16_t *pBuf)
 {
   ShaderInvocationInfo info;
   int tileXPos;
@@ -68,37 +74,37 @@ void Renderer::renderTile(int tileIdx)
   getNthTile(tileIdx, tileXPos, tileYPos);
   tileXPos *= tileWidth;
   tileYPos *= tileHeight;
-  std::uint16_t *pBuf = new std::uint16_t[tileWidth * tileHeight];
   info.pOutColor = pBuf;
-  for (info.screenY = tileYpos; info.screenY < tileYPos + tileHeight; ++info.screenY)
+  for (info.screenY = tileYPos; info.screenY < tileYPos + tileHeight; ++info.screenY)
   {
     for (info.screenX = tileXPos; info.screenX < tileXPos + tileWidth; ++info.screenX)
     {
-      for (RenderObject *pObj : pTiles[tileIdx])
+      for (const auto &depthObjSetPair : pTiles[tileIdx])
       {
-        if (pObj->doesContainPoint(static_cast<float>(info.screenX),
-          static_cast<float>(info.screenY)))
+        for (RenderObject *pObj : depthObjSetPair.second)
         {
-          info.normFragX = static_cast<float>(info.screenX - pObj->getBounds().x)
-            / pObj->getBounds().width;
-          info.normFragY = static_cast<float>(info.screenY - pObj->getBounds().y)
-            / pObj->getBounds().height;
-          if (pObj->runShader(info))
+          if (pObj->doesContainPoint(info.screenX, info.screenY))
           {
-            // for now, the first non-discarded fragment is the last one we need to draw.
-            // this changes if we decide to support alpha blending or depth buffering (right now we
-            // just render front-to-back and hope for the best.)
-            break;
+            info.normFragX = (info.screenX - pObj->getBounds().x) / pObj->getBounds().width;
+            info.normFragY = (info.screenY - pObj->getBounds().y) / pObj->getBounds().height;
+            if (pObj->runShader(info))
+            {
+              // for now, the first non-discarded fragment is the last one we need to draw.
+              // this changes if we decide to support alpha blending or depth buffering (right now we
+              // just render front-to-back and hope for the best.)
+              break;
+            }
           }
         }
       }
-      ++info.pOutColor;
+      info.pOutColor = static_cast<std::uint16_t *>(info.pOutColor) + 1;
     }
   }
   {
-    std::lock_guard<std::mutex> lock(tileWriteMutex);
+    spin_lock_unsafe_blocking(tileWriteSpinlock);
     display.writePixelBlock(tileXPos, tileXPos + tileWidth - 1, tileYPos, tileYPos + tileHeight - 1, 
-      reinterpret_cast<std::uint8_t *>(pBuf));
+      true, reinterpret_cast<std::uint8_t *>(pBuf));
+    spin_unlock_unsafe(tileWriteSpinlock);
   }
 }
 void Renderer::getTileRect(int tileX, int tileY, RectF &rect)

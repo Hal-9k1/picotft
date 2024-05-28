@@ -1,31 +1,32 @@
 #ifndef PICOTFT_RENDERER_HPP
 #define PICOTFT_RENDERER_HPP
-#include "picotft/include/Display.hpp"
-#include "picotft/include/RenderObject.hpp"
+#include "hardware/sync.h"
+#include "picotft/Display.hpp"
+#include "picotft/RenderObject.hpp"
 #include <map>
-#include <mutex>
 #include <unordered_set>
 
 class Renderer
 {
 public:
-  Renderer(const Display &display, int tilesX, int tilesY);
+  Renderer(Display &display, int tilesX, int tilesY);
   void addObject(RenderObject *pObject);
   void removeObject(RenderObject *pObject);
   void render();
 
 private:
-  const Display &display;
+  Display &display;
   int tilesX;
   int tilesY;
   int tileWidth;
   int tileHeight;
+  std::uint16_t *pPixelBufMemory;
   std::map<float, std::unordered_set<RenderObject *>> *pTiles;
-  std::mutex tileWriteMutex;
+  spin_lock_t *tileWriteSpinlock;
 
   static void alternateCoreRender();
   void coreRender(int core);
-  void renderTile(int tileIdx);
+  void renderTile(int tileIdx, std::uint16_t *pBuf);
   void getTileRect(int tileX, int tileY, RectF &rect);
   void getNthTile(int tileIdx, int &tileX, int &tileY);
 };
