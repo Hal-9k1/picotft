@@ -68,7 +68,7 @@ void Display::writeRepeatingPixelBlock(std::uint16_t startCol, std::uint16_t end
   for (std::size_t i = 0; i < numWrittenPixels; ++i)
   {
     // swap every 2 bytes (2 bytes per pixel)
-    int endianOffset = (bigEndian && i + 1 < numWrittenPixels) ? !(i % 2) * 2 - 1 : 0;
+    int endianOffset = (!bigEndian && i + 1 < numWrittenPixels) ? !(i % 2) * 2 - 1 : 0;
     pDisplayIO->writeByte(pPixelData[i % (pixelCount * 2) + endianOffset]);
   }
   pDisplayIO->endCmdWrite();
