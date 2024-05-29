@@ -4,7 +4,7 @@
 #include "picotft/RenderObject.hpp"
 #include "picotft/ShaderInvocationInfo.hpp"
 
-class ColorRect : RenderObject
+class ColorRect : public RenderObject
 {
 public:
   ColorRect(const RectF &bounds, float z, int colorDepth, const char *pColor);

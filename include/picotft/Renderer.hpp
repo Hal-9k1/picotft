@@ -20,6 +20,7 @@ private:
   int tilesY;
   int tileWidth;
   int tileHeight;
+  bool altCoreCompleted;
   std::uint16_t *pPixelBufMemory;
   std::map<float, std::unordered_set<RenderObject *>> *pTiles;
   spin_lock_t *tileWriteSpinlock;

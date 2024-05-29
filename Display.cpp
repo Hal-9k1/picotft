@@ -12,7 +12,7 @@ Display::Display(DisplayIO *pDisplayIO, DisplayOrientation initialOrientation)
   //   won't use so I'm not sure if it's necessary to set this)
   // 0x05: use B5G6R5 format for DBI interface (for writing to display RAM)
   uint8_t pixelFormat = 0x55;
-  pDisplayIO->writeCmd(0x3A, 1, true, &pixelFormat);
+  pDisplayIO->writeCmd(0x3A, 1, false, &pixelFormat);
   setDisplayOn(true);
   setSleepOn(false);
   setInvertOn(false);
@@ -23,19 +23,19 @@ Display::Display(DisplayIO *pDisplayIO, DisplayOrientation initialOrientation)
 
 void Display::setBacklightBrightness(std::uint8_t brightness)
 {
-  pDisplayIO->writeCmd(0x51, 1, true, &brightness);
+  pDisplayIO->writeCmd(0x51, 1, false, &brightness);
 }
 void Display::setDisplayOn(bool on)
 {
-  pDisplayIO->writeCmd(on ? 0x29 : 0x28, 0, true, nullptr);
+  pDisplayIO->writeCmd(on ? 0x29 : 0x28, 0, false, nullptr);
 }
 void Display::setSleepOn(bool on)
 {
-  pDisplayIO->writeCmd(on ? 0x10 : 0x11, 0, true, nullptr);
+  pDisplayIO->writeCmd(on ? 0x10 : 0x11, 0, false, nullptr);
 }
 void Display::setInvertOn(bool on)
 {
-  pDisplayIO->writeCmd(on ? 0x21 : 0x20, 0, true, nullptr);
+  pDisplayIO->writeCmd(on ? 0x21 : 0x20, 0, false, nullptr);
 }
 void Display::setOrientation(DisplayOrientation orientation)
 {
@@ -89,16 +89,16 @@ void Display::setWriteWindow(std::uint16_t startCol, std::uint16_t endCol,
     static_cast<std::uint8_t>(endCol >> 8),
     static_cast<std::uint8_t>(endCol & 0xFF)
   };
-  pDisplayIO->writeCmd(0x2A, 4, true, colAddrParam);
+  pDisplayIO->writeCmd(0x2A, 4, false, colAddrParam);
   std::uint8_t pageAddrParam[] = {
     static_cast<std::uint8_t>(startRow >> 8),
     static_cast<std::uint8_t>(startRow & 0xFF),
     static_cast<std::uint8_t>(endRow >> 8),
     static_cast<std::uint8_t>(endRow & 0xFF)
   };
-  pDisplayIO->writeCmd(0x2B, 4, true, pageAddrParam);
+  pDisplayIO->writeCmd(0x2B, 4, false, pageAddrParam);
 }
 void Display::writeDmacByte()
 {
-  pDisplayIO->writeCmd(0x36, 1, true, &dmacByte);
+  pDisplayIO->writeCmd(0x36, 1, false, &dmacByte);
 }

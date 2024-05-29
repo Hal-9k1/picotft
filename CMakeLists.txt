@@ -29,6 +29,7 @@ endif()
 #endif()
 
 add_library(picotft
+  ColorRect.cpp
   Display.cpp
   DisplayIO.cpp
   ImageBuffer.cpp
