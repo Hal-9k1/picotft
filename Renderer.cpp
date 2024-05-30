@@ -63,13 +63,11 @@ void Renderer::render()
 
 void Renderer::alternateCoreRender()
 {
-  std::printf("Begin alternateCoreRender");
   Renderer *that = reinterpret_cast<Renderer *>(multicore_fifo_pop_blocking());
   that->coreRender(1);
 }
 void Renderer::coreRender(int core)
 {
-  std::printf("Core %d render began\n", core);
   for (int i = core; i < tilesX * tilesY; i += 2)
   {
     renderTile(i, pPixelBufMemory + core * tileWidth * tileHeight);
@@ -79,7 +77,6 @@ void Renderer::coreRender(int core)
     altCoreCompleted = true;
     __sev();
   }
-  std::printf("Core %d render completed\n", core);
 }
 void Renderer::renderTile(int tileIdx, std::uint16_t *pBuf)
 {
@@ -117,7 +114,6 @@ void Renderer::renderTile(int tileIdx, std::uint16_t *pBuf)
     }
   }
   spin_lock_unsafe_blocking(tileWriteSpinlock);
-  std::printf("Tile %d written from core %d\n", tileIdx, tileIdx % 2);
   display.writePixelBlock(tileXPos, tileXPos + tileWidth - 1, tileYPos, tileYPos + tileHeight - 1,
     true, reinterpret_cast<std::uint8_t *>(pBuf));
   spin_unlock_unsafe(tileWriteSpinlock);

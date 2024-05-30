@@ -137,7 +137,6 @@ void DisplayIO::handleReadInterrupt(uint gpio, std::uint32_t events)
 }
 void DisplayIO::writeByte(std::uint8_t byte)
 {
-  //std::printf("Writing byte %02X\n", byte);
   for (uint i = 0; i < 8; ++i)
   {
     if ((byte & (1 << i)) == 0)
@@ -149,8 +148,9 @@ void DisplayIO::writeByte(std::uint8_t byte)
       driveHigh(pinConfig.bus[i]);
     }
   }
+  // apparently however many pico clock cycles this is is more than enough time for the display to
+  // read the bus without adding additional delay:
   driveLow(pinConfig.writeStrobe);
-  //sleep_us(10);
   driveHigh(pinConfig.writeStrobe);
 }
 void DisplayIO::pullHigh(uint pin)
