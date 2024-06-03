@@ -1,8 +1,8 @@
-#ifndef PICOTFT_RENDERER_HPP
-#define PICOTFT_RENDERER_HPP
+#ifndef PICOTFT_RENDERING_RENDERER_HPP
+#define PICOTFT_RENDERING_RENDERER_HPP
 #include "hardware/sync.h"
 #include "picotft/Display.hpp"
-#include "picotft/RenderObject.hpp"
+#include "picotft/rendering/RenderObject.hpp"
 #include <map>
 #include <unordered_set>
 
@@ -31,4 +31,4 @@ private:
   void getTileRect(int tileX, int tileY, RectF &rect);
   void getNthTile(int tileIdx, int &tileX, int &tileY);
 };
-#endif // PICOTFT_RENDERER_HPP
+#endif // PICOTFT_RENDERING_RENDERER_HPP

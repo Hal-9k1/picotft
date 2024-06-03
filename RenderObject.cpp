@@ -1,6 +1,6 @@
-#include "picotft/RenderObject.hpp"
+#include "picotft/rendering/RenderObject.hpp"
 
-#include "picotft/RectF.hpp"
+#include "picotft/rendering/RectF.hpp"
 
 const RectF &RenderObject::getBounds()
 {

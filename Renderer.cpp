@@ -1,7 +1,7 @@
-#include "picotft/Renderer.hpp"
+#include "picotft/rendering/Renderer.hpp"
 
 #include "hardware/sync.h"
-#include "picotft/RenderObject.hpp"
+#include "picotft/rendering/RenderObject.hpp"
 #include "picotft/Display.hpp"
 #include "pico/multicore.h"
 #include <cstdio>
@@ -18,7 +18,11 @@ Renderer::Renderer(Display &display, int tilesX, int tilesY)
   display.getSize(displayWidth, displayHeight);
   tileWidth = displayWidth / tilesX;
   tileHeight = displayHeight / tilesY;
-  pPixelBufMemory = new std::uint16_t[tileWidth * tileHeight * 2]; // one tile buffer per core
+  // should be 2 - this, but it works out the same:
+  int padding = (tileWidth * tileHeight) % 2;
+  // padding is only needed for the last pixel buffer; the others can just reach into the
+  // next buffers if needed
+  pPixelBufMemory = new std::uint16_t[tileWidth * tileHeight * 4 + padding];
 }
 
 void Renderer::addObject(RenderObject *pObject)
@@ -70,7 +74,8 @@ void Renderer::coreRender(int core)
 {
   for (int i = core; i < tilesX * tilesY; i += 2)
   {
-    renderTile(i, pPixelBufMemory + core * tileWidth * tileHeight);
+    renderTile(i, pPixelBufMemory + (core * 2 + bufsInFlight[core]) * tileWidth * tileHeight);
+    bufsInFlight[core] = !bufsInFlight[core];
   }
   if (core)
   {
@@ -115,7 +120,7 @@ void Renderer::renderTile(int tileIdx, std::uint16_t *pBuf)
   }
   spin_lock_unsafe_blocking(tileWriteSpinlock);
   display.writePixelBlock(tileXPos, tileXPos + tileWidth - 1, tileYPos, tileYPos + tileHeight - 1,
-    true, reinterpret_cast<std::uint8_t *>(pBuf));
+    true, 0, reinterpret_cast<std::uint8_t *>(pBuf));
   spin_unlock_unsafe(tileWriteSpinlock);
 }
 void Renderer::getTileRect(int tileX, int tileY, RectF &rect)

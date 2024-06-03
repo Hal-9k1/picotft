@@ -1,7 +1,7 @@
-#ifndef PICOTFT_RENDEROBJECT_HPP
-#define PICOTFT_RENDEROBJECT_HPP
-#include "picotft/RectF.hpp"
-#include "picotft/ShaderInvocationInfo.hpp"
+#ifndef PICOTFT_RENDERING_RENDEROBJECT_HPP
+#define PICOTFT_RENDERING_RENDEROBJECT_HPP
+#include "picotft/rendering/RectF.hpp"
+#include "picotft/rendering/ShaderInvocationInfo.hpp"
 
 class RenderObject
 {
@@ -18,4 +18,4 @@ private:
   RectF bounds;
   float z;
 };
-#endif // PICOTFT_RENDEROBJECT_HPP
+#endif // PICOTFT_RENDERING_RENDEROBJECT_HPP

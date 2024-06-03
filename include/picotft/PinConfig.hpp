@@ -5,9 +5,8 @@
 
 struct PinConfig
 {
-  uint bus[8];
-  uint chipSel;
-  uint cmdSwitch;
+  uint busBase;
+  uint chipSelCmdSwitchBase;
   uint writeStrobe;
   uint readStrobe;
   uint reset;

@@ -1,9 +1,9 @@
-#include "picotft/ColorRect.hpp"
+#include "picotft/rendering/ColorRect.hpp"
 
 #include <cstring>
-#include "picotft/RectF.hpp"
-#include "picotft/RenderObject.hpp"
-#include "picotft/ShaderInvocationInfo.hpp"
+#include "picotft/rendering/RectF.hpp"
+#include "picotft/rendering/RenderObject.hpp"
+#include "picotft/rendering/ShaderInvocationInfo.hpp"
 
 ColorRect::ColorRect(const RectF &bounds, float z, int colorDepth, const char *pColor)
   : RenderObject(bounds, z), colorDepth(colorDepth)

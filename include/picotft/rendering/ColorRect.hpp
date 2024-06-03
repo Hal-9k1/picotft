@@ -1,8 +1,8 @@
-#ifndef PICOTFT_COLORRECT_HPP
-#define PICOTFT_COLORRECT_HPP
-#include "picotft/RectF.hpp"
-#include "picotft/RenderObject.hpp"
-#include "picotft/ShaderInvocationInfo.hpp"
+#ifndef PICOTFT_RENDERING_COLORRECT_HPP
+#define PICOTFT_RENDERING_COLORRECT_HPP
+#include "picotft/rendering/RectF.hpp"
+#include "picotft/rendering/RenderObject.hpp"
+#include "picotft/rendering/ShaderInvocationInfo.hpp"
 
 class ColorRect : public RenderObject
 {
@@ -14,4 +14,4 @@ private:
   int colorDepth;
   char *pColor;
 };
-#endif // PICOTFT_COLORRECT_HPP
+#endif // PICOTFT_RENDERING_COLORRECT_HPP

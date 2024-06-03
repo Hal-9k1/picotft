@@ -1,5 +1,5 @@
-#ifndef PICOTFT_IMAGEBUFFER_HPP
-#define PICOTFT_IMAGEBUFFER_HPP
+#ifndef PICOTFT_RENDERING_IMAGEBUFFER_HPP
+#define PICOTFT_RENDERING_IMAGEBUFFER_HPP
 class ImageBuffer
 {
 public:
@@ -36,4 +36,4 @@ private:
   void valueToMsbBuffer(int value, unsigned char *pBuf);
   int msbBufferToValue(const unsigned char *pBuf);
 };
-#endif // PICOTFT_IMAGEBUFFER_HPP
+#endif // PICOTFT_RENDERING_IMAGEBUFFER_HPP

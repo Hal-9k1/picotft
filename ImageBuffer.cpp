@@ -1,4 +1,4 @@
-#include "picotft/ImageBuffer.hpp"
+#include "picotft/rendering/ImageBuffer.hpp"
 
 #include <cmath>
 #include <cstdint>

@@ -1,40 +1,48 @@
 #ifndef PICOTFT_DISPLAYIO_HPP
 #define PICOTFT_DISPLAYIO_HPP
 #include <cstdint>
+#include "DisplayCmdWrite.hpp"
 #include "pico/types.h"
 #include "picotft/PinConfig.hpp"
+#include "hardware/pio.h"
 
 class DisplayIO
 {
 public:
-  DisplayIO(const PinConfig &pinConfig, uint readBufferLength);
-  ~DisplayIO();
+  DisplayIO(const PinConfig &pinConfig);
 
-  void writeCmd(std::uint8_t cmdByte, uint dataLen, bool swapBytePairs, const std::uint8_t *pDataBytes);
-  void writeCmdHeader(std::uint8_t cmdByte);
-  void writeByte(std::uint8_t byte);
-  void endCmdWrite();
-  std::uint8_t waitReadByte();
-  bool tryReadByte(std::uint8_t &outByte);
-
+  int writeCmd(std::uint8_t cmdByte);
+  int writeCmdEx(const DisplayCmdWrite &request);
+  void waitForWriteTicket(int ticket);
+  void isWriteTicketCompleted(int ticket);
+  void cancelWriteTicket(int ticket);
+  // TODO: reading
 private:
-  // I hate singletons but gpio_irq_callback_t doesn't have a userdata parameter and by the looks of
-  // things (https://github.com/raspberrypi/pico-sdk/issues/756) won't for a long time
-  static DisplayIO *pInstance;
+  struct WriteRequest
+  {
+    DisplayCmdWrite writeInfo;
+    int header[2];
+    int subId;
+  };
+  static DisplayIO *pSingleton; // ew
+  static void dmaIrqHandler();
 
-  std::uint8_t *buf;
-  uint bufLen;
-  uint bufWriteCursor;
-  uint bufReadCursor;
-  bool bufFull;
-  bool bufOverflow;
   PinConfig pinConfig;
+  int writeTicketsDone;
+  int writeTicketsIssued;
+  int writeTicketSizeBits;
+  int maxWriteTicket;
+  bool maxWritesReached;
+  bool nextDmaReady;
+  std::vector<WriteRequest> writeRequests;
+  PIO pio;
+  uint writePioSm;
+  uint cmdWriteDma;
+  uint paramWriteDma;
+  dma_channel_config cmdWriteDmaConfig;
+  dma_channel_config paramWriteDmaConfig;
 
-  static void handleReadInterrupt(uint gpio, std::uint32_t events);
-
-  void pullHigh(uint pin);
-  void pullLow(uint pin);
-  void driveHigh(uint pin);
-  void driveLow(uint pin);
+  void processNextWriteTicket();
+  void setupDma(const WriteRequest &request);
 };
 #endif // PICOTFT_DISPLAYIO_HPP

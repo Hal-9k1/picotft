@@ -1,0 +1,63 @@
+; Writes commands and parameters to the display.
+;
+; Pin assignments:
+; - Write strobe is side-set bit 0
+; - Chip select is SET pin 0
+; - Command/data select is SET pin 1
+; - Bus pins 0-7 are OUT pins 0-7
+;
+; Autopull is required.
+; Sticky output must be enabled.
+; OSR shift direction is left.
+; FIFOs may be merged.
+
+.program gen_cmd_write
+.side_set 1
+
+.wrap_target
+  out x, 32     side 0 ; stall when reading parameter data length
+  set pins, 0   side 0 ; cs and cd low
+  out pins, 8   side 0
+  set pins, 1   side 1 ; cs low, cd high
+  out y, 2      side 0 ; number of padding bytes at end of parameter data
+  out null, 22  side 0 ; discard remaining padding bytes
+  jmp !x, done  side 0 ; if no parameters, skip loop
+  jmp x-- loop  side 0 ; not expected to jump, just need to decrement x
+loop: 
+  out pins, 8   side 0
+  jmp x-- loop  side 1
+  jmp !y, done  side 0 ; if no trailing padding, skip junk loop
+  jmp y-- junk  side 0 ; decrement y
+junk:
+  out null, 8
+  jmp y-- junk
+done:
+  set pins, 3   side 0 ; cs and cd high
+.wrap
+
+% c-sdk {
+static inline void gen_cmd_write_program_init(PIO pio, uint sm, uint offset, uint setPinsBase,
+  uint busPinsBase, uint writeStrobePin)
+{
+  pio_gpio_init(pio, setPinsBase);
+  pio_gpio_init(pio, setPinsBase + 1);
+  pio_gpio_init(pio, writeStrobePin);
+  for (int i = 0; i < 8; ++i)
+  {
+    pio_gpio_init(pio, busPinsBase + i);
+  }
+  pio_sm_set_consecutive_pindirs(pio, sm, setPinsBase, 2, true);
+  pio_sm_set_consecutive_pindirs(pio, sm, writeStrobePin, 1, true);
+  pio_sm_set_consecutive_pindirs(pio, sm, busPinsBase, 8, true);
+  pio_sm_config config = gen_cmd_write_program_get_default_config(offset);
+  sm_config_set_set_pins(&config, setPinsBase, 2);
+  sm_config_set_sideset_pins(&config, writeStrobePin);
+  sm_config_set_out_pins(&config, busPinsBase, 8);
+  sm_config_set_fifo_join(&config, PIO_FIFO_JOIN_RX);
+  sm_config_set_out_shift(&config, false, true, 32);
+  sm_config_set_out_special(&config, true, false, 0);
+
+  pio_sm_init(pio, sm, offset, &config);
+  pio_sm_set_enabled(pio, sm, true);
+}
+%}
